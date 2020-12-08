@@ -3,7 +3,7 @@ package com.liu.com.liu.annonation;
 import java.lang.annotation.*;
 
 @Documented
-@Target({ElementType.TYPE, ElementType.FIELD})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MyRequestParam {
 
