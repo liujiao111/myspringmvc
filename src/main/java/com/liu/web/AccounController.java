@@ -19,10 +19,8 @@ public class AccounController {
 
     @MyRequestParam(value = "/test")
 
-    public String test(HttpServletRequest request, HttpServletResponse response, String name) {
-        System.out.println("test-->test:" + name);
-        System.out.println(request);
-        System.out.println(response);
+    public String test(HttpServletRequest request, HttpServletResponse response, String username) {
+        System.out.println("test-->test:" + username);
         accountService.test();
         return "";
     }
