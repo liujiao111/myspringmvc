@@ -313,6 +313,12 @@ public class MyDispatchServlet extends HttpServlet {
         return controllerResult && methodResult;
     }
 
+    /**
+     * 根据传入的名称判断是否有权限访问请求的controller或者method
+     * @param annotation
+     * @param req
+     * @return
+     */
     private boolean checkSecurity(Security annotation, HttpServletRequest req) {
         if (annotation != null) {
             final String[] controllerValue = annotation.value();
@@ -328,6 +334,11 @@ public class MyDispatchServlet extends HttpServlet {
         return false;
     }
 
+    /**
+     * 根据请求的路径获取对应的请求处理器
+     * @param req
+     * @return
+     */
     private Handler getHandler(HttpServletRequest req) {
         if (handlers.isEmpty()) {
             return null;
