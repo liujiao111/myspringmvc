@@ -1,9 +1,6 @@
 package com.liu.framework;
 
-import com.liu.com.liu.annonation.MyAutowired;
-import com.liu.com.liu.annonation.MyController;
-import com.liu.com.liu.annonation.MyRequestParam;
-import com.liu.com.liu.annonation.MyService;
+import com.liu.com.liu.annonation.*;
 import com.liu.pojo.Handler;
 import org.apache.commons.lang3.StringUtils;
 
@@ -71,15 +68,19 @@ public class MyDispatchServlet extends HttpServlet {
      * url映射配置
      */
     private void doInitMappings() {
-        if(ioc.isEmpty()) {return;}
+        if (ioc.isEmpty()) {
+            return;
+        }
         for (Map.Entry<String, Object> entry : ioc.entrySet()) {
             final Class<?> aClass = entry.getValue().getClass();
 
             //只处理controller
-            if(! aClass.isAnnotationPresent(MyController.class)) {continue;}
+            if (!aClass.isAnnotationPresent(MyController.class)) {
+                continue;
+            }
 
             String baseUrl = "";
-            if(aClass.isAnnotationPresent(MyRequestParam.class)) {
+            if (aClass.isAnnotationPresent(MyRequestParam.class)) {
                 baseUrl = aClass.getAnnotation(MyRequestParam.class).value();
             }
 
@@ -89,7 +90,9 @@ public class MyDispatchServlet extends HttpServlet {
                 Method method = methods[i];
 
                 //如果方法上没有注解标识，则不处理
-                if(! method.isAnnotationPresent(MyRequestParam.class)) {continue;}
+                if (!method.isAnnotationPresent(MyRequestParam.class)) {
+                    continue;
+                }
 
                 String methodUrl = method.getAnnotation(MyRequestParam.class).value();
                 String url = baseUrl + methodUrl;
@@ -100,7 +103,7 @@ public class MyDispatchServlet extends HttpServlet {
                 Parameter[] parameters = method.getParameters();
                 for (int j = 0; j < parameters.length; j++) {
                     Parameter parameter = parameters[j];
-                    if(parameter.getType() == HttpServletRequest.class || parameter.getType() ==  HttpServletResponse.class) {
+                    if (parameter.getType() == HttpServletRequest.class || parameter.getType() == HttpServletResponse.class) {
                         handler.getParamIndexMapping().put(parameter.getType().getSimpleName(), j);
                     } else {
                         handler.getParamIndexMapping().put(parameter.getName(), j);
@@ -117,18 +120,20 @@ public class MyDispatchServlet extends HttpServlet {
      * 处理bean对象之间的依赖关系
      */
     private void doAutowired() {
-        if(ioc.isEmpty()) {return;}
+        if (ioc.isEmpty()) {
+            return;
+        }
 
         for (Map.Entry<String, Object> entry : ioc.entrySet()) {
             final Field[] declaredFields = entry.getValue().getClass().getDeclaredFields();
             for (Field declaredField : declaredFields) {
-                if(! declaredField.isAnnotationPresent(MyAutowired.class)) {
+                if (!declaredField.isAnnotationPresent(MyAutowired.class)) {
                     continue;
                 }
 
                 MyAutowired annotation = declaredField.getAnnotation(MyAutowired.class);
                 String beanName = annotation.value();
-                if("".equals(beanName.trim())) {
+                if ("".equals(beanName.trim())) {
                     //如果没有配置bean id，则需要根据当前字段类型进行注入
                     beanName = declaredField.getType().getName();
                 }
@@ -148,24 +153,26 @@ public class MyDispatchServlet extends HttpServlet {
      * 初始化IOC bean容器
      */
     private void doInitInstance() throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        if(classNames.size() == 0) {return;}
+        if (classNames.size() == 0) {
+            return;
+        }
 
         for (int i = 0; i < classNames.size(); i++) {
             String className = classNames.get(i);
             final Class<?> aClass = Class.forName(className);
 
             //区分controller和service
-            if(aClass.isAnnotationPresent(MyController.class)) {
+            if (aClass.isAnnotationPresent(MyController.class)) {
                 String simpleName = aClass.getSimpleName();
                 String lowerFirstName = lowerFirst(simpleName);
                 final Object o = aClass.newInstance();
                 ioc.put(lowerFirstName, o);
-            } else if(aClass.isAnnotationPresent(MyService.class)) {
+            } else if (aClass.isAnnotationPresent(MyService.class)) {
                 final MyService annotation = aClass.getAnnotation(MyService.class);
                 String beanName = annotation.value();
 
                 //如果指定了ID，就以指定的id为bean name
-                if(! "".equalsIgnoreCase(beanName.trim())) {
+                if (!"".equalsIgnoreCase(beanName.trim())) {
                     ioc.put(beanName, aClass.newInstance());
                 } else {
                     //如果没有指定id,就以类名首字母小写为bean name
@@ -185,12 +192,13 @@ public class MyDispatchServlet extends HttpServlet {
 
     /**
      * 将字符串首字母转换为小写
+     *
      * @param simpleName
      * @return
      */
     private String lowerFirst(String simpleName) {
         final char[] chars = simpleName.toCharArray();
-        if('A' <= chars[0] && chars[0] <= 'Z') {
+        if ('A' <= chars[0] && chars[0] <= 'Z') {
             chars[0] += 32;
         }
         return String.valueOf(chars);
@@ -198,6 +206,7 @@ public class MyDispatchServlet extends HttpServlet {
 
     /**
      * 扫码注解
+     *
      * @param scanPackage
      */
     private void doScanAnnonation(String scanPackage) {
@@ -205,9 +214,9 @@ public class MyDispatchServlet extends HttpServlet {
         File pack = new File(scanPackagePath);
         final File[] files = pack.listFiles();
         for (File file : files) {
-            if(file.isDirectory()) {
+            if (file.isDirectory()) {
                 doScanAnnonation(scanPackage + "." + file.getName());
-            } else if(file.getName().endsWith(".class")){
+            } else if (file.getName().endsWith(".class")) {
                 String className = scanPackage + "." + file.getName().replaceAll(".class", "");
                 classNames.add(className);
             }
@@ -217,6 +226,7 @@ public class MyDispatchServlet extends HttpServlet {
 
     /**
      * 加载配置文件
+     *
      * @param contextConfigLocation
      */
     private void doLoadConfig(String contextConfigLocation) {
@@ -237,8 +247,14 @@ public class MyDispatchServlet extends HttpServlet {
         //根据url找到对应的method方法，进行调用
         Handler handler = getHandler(req);
 
-        if(handler == null) {
+        if (handler == null) {
             resp.getWriter().write("404 not found");
+            return;
+        }
+
+        //访问权限校验
+        if (!checkAuth(handler, req)) {
+            resp.getWriter().write("401 no auth");
             return;
         }
 
@@ -252,7 +268,9 @@ public class MyDispatchServlet extends HttpServlet {
 
         for (Map.Entry<String, String[]> param : parameterMap.entrySet()) {
             String value = StringUtils.join(param.getValue(), ",");
-            if(! handler.getParamIndexMapping().containsKey(param.getKey())) {continue;}
+            if (!handler.getParamIndexMapping().containsKey(param.getKey())) {
+                continue;
+            }
 
             Integer index = handler.getParamIndexMapping().get(param.getKey());
 
@@ -269,6 +287,7 @@ public class MyDispatchServlet extends HttpServlet {
 
         try {
             handler.getMethod().invoke(handler.getController(), paramValues);
+            resp.getWriter().write("200 success!");
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -276,13 +295,50 @@ public class MyDispatchServlet extends HttpServlet {
         }
     }
 
+    //访问权限校验
+    private boolean checkAuth(Handler handler, HttpServletRequest req) {
+        //处理类上的权限
+        Object controller = handler.getController();
+        Security annotation = controller.getClass().getAnnotation(Security.class);
+        boolean controllerResult = checkSecurity(annotation, req);
+        if(controllerResult) { //如果类权限配置通过，则所有方法均可访问
+            return true;
+        }
+
+        //处理方法上的权限
+        Method method = handler.getMethod();
+        Security methodAnnotation = method.getAnnotation(Security.class);
+        boolean methodResult = checkSecurity(methodAnnotation, req);
+
+        return controllerResult && methodResult;
+    }
+
+    private boolean checkSecurity(Security annotation, HttpServletRequest req) {
+        if (annotation != null) {
+            final String[] controllerValue = annotation.value();
+            if (controllerValue != null) {
+                for (String val : controllerValue) {
+                    String username = req.getParameter("username");
+                    if (val.equalsIgnoreCase(username)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     private Handler getHandler(HttpServletRequest req) {
-        if(handlers.isEmpty()) {return null;}
+        if (handlers.isEmpty()) {
+            return null;
+        }
 
         final String url = req.getRequestURI();
         for (Handler hander : handlers) {
             final Matcher matcher = hander.getPattern().matcher(url);
-            if(! matcher.matches()) {continue;}
+            if (!matcher.matches()) {
+                continue;
+            }
 
             return hander;
         }
